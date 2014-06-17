@@ -1,0 +1,15 @@
+Package: celltypes450
+Type: Package
+Title: Deal with cell types in 450K data.
+Description: Adjust beta values for cell-types from Houseman data
+Version: 0.1
+Author: Brent Pedersen, (Andres Houseman)
+Maintainer: Brent Pedersen <bpederse@gmail.com>
+Depends:
+    R (>= 3.0.2)
+License: MIT + file LICENSE
+LazyData: true
+Imports:
+    nlme,
+    parallel,
+    quadprog
