@@ -2,13 +2,13 @@ library(parallel)
 library(nlme)
 
 
-ilogit = function(M){
+m.ilogit = function(M){
     res = exp(M) / (1 + exp(M))
     rownames(res) = rownames(M)
     colnames(res) = colnames(M)
     res
 }
-logit = function(b){
+m.logit = function(b){
     res = log(b) - log(1 - b)
     rownames(res) = rownames(b)
     colnames(res) = colnames(b)
