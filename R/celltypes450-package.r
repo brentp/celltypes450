@@ -16,4 +16,5 @@
 #' 
 #' @name celltypes450
 #' @docType package
+#' @import nlme parallel
 NULL

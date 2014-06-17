@@ -1,1 +1,5 @@
 export(adjust.beta)
+export(m.ilogit)
+export(m.logit)
+import(nlme)
+import(parallel)

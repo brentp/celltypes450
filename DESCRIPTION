@@ -13,3 +13,7 @@ Imports:
     nlme,
     parallel,
     quadprog
+Suggests:
+    nlme,
+    parallel,
+    quadprog

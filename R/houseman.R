@@ -1,13 +1,21 @@
 library(parallel)
 library(nlme)
 
-
+#' Perform the anti-logit
+#' @param M matrix of M values on which to apply anti-logit.
+#' @return beta matrix
+#' @export
 m.ilogit = function(M){
     res = exp(M) / (1 + exp(M))
     rownames(res) = rownames(M)
     colnames(res) = colnames(M)
     res
 }
+
+#' Perform the logit transform.
+#' @param b matrix of beta values on which to apply logit.
+#' @return M matrix
+#' @export
 m.logit = function(b){
     res = log(b) - log(1 - b)
     rownames(res) = rownames(b)
