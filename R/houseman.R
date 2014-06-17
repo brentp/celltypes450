@@ -107,7 +107,7 @@ adjust.beta = function(B, top_n=500, mc.cores=2,
     stopifnot(nrow(dmr.coefs) > 0)
 
     # reporter matrix
-    Lwbc = diag(8)[-(1:2),]
+    Lwbc = diag(ncol(dmr.coefs))[-(1:2),]
     Lwbc[1:2,2] = 1 ; Lwbc[,1] = 1
     rownames(Lwbc) = colnames(dmr.coefs)[-(1:2)]
     colnames(Lwbc) = colnames(dmr.coefs)
