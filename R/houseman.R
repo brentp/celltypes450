@@ -89,6 +89,15 @@ adjust.beta = function(B, top_n=500, mc.cores=2,
     stopifnot(all((B > 0) & (B < 1), na.rm=TRUE))
 
     if(is.null(cell.coefs)){
+      if(nrow(B) <= 200000){
+        if(length(grep("^cg", rownames(B), value=TRUE, perl=TRUE)) >=
+           length(grep("^chr", rownames(B), value=TRUE, perl=TRUE))){
+          cell.coefs = system.file("extdata", "houseman-dmrs.txt", package="celltypes450")
+        } else {
+          cell.coefs = system.file("extdata", "houseman-dmrs-locs.txt", package="celltypes450")
+        }
+        warning("We suggest you use at least 2x10^5 probes")
+      }
         # rownames are cg id.
         if(length(grep("^cg", rownames(B), value=TRUE, perl=TRUE)) > 200000){
             cell.coefs = system.file("extdata", "houseman-dmrs.txt", package="celltypes450")
