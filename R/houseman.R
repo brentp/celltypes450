@@ -86,7 +86,7 @@ penFitAll = function(Ymat, Zmat){
 adjust.beta = function(B, top_n=500, mc.cores=2, 
                        cell.coefs=NULL,
                        est.only=FALSE){
-    stopifnot(all((B > 0) & (B < 1), na.rm=TRUE))
+    stopifnot(all((B >= 0) & (B <= 1), na.rm=TRUE))
 
     if(is.null(cell.coefs)){
       if(nrow(B) <= 200000){
