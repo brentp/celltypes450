@@ -163,12 +163,12 @@ adjust.beta = function(B, top_n=500, mc.cores=2,
     epsilon.min = min(B, 1 - B)
     epsilon.max = 1 - epsilon.min
 
-    message(paste("% values <= 0:", sum(adjBeta <= 0, na.rm=TRUE) / nCpGs * 100))
-    message(paste("% values >= 1:", sum(adjBeta >= 1, na.rm=TRUE) / nCpGs * 100))
-    message("these will be changed to 0+epsilon, 1-epsilon respectively")
+    message(sprintf("%0.3g%% of values < epsilon:", sum(adjBeta < epsilon.min, na.rm=TRUE) / nCpGs * 100))
+    message(sprintf("%0.3g%% of values > 1-epsilon:", sum(adjBeta > epsilon.max, na.rm=TRUE) / nCpGs * 100))
+    message("these will be changed to epsilon, 1-epsilon respectively")
 
-    adjBeta[(adjBeta <= 0)] = epsilon.min
-    adjBeta[(adjBeta >= 1)] = epsilon.max
+    adjBeta = pmax(adjBeta, epsilon.min)
+    adjBeta = pmin(adjBeta, epsilon.max)
     rownames(adjBeta) = rownames(B)
     colnames(adjBeta) = colnames(B)
 
