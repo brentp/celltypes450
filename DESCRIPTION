@@ -17,3 +17,4 @@ Suggests:
     nlme,
     parallel,
     quadprog
+RoxygenNote: 5.0.1

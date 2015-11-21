@@ -67,9 +67,7 @@ penFitAll = function(Ymat, Zmat){
   list(mu=mu, beta=beta, tau=tau, sigma=sigma, adjusted=adjusted)
 }
 
-#' Adjust Beta for cell mixture. Returns beta of the average cell-type.
-#'
-#' Can also return the estimates of each cell when est.only=TRUE
+#' Estimate cell-type coefficients. Returns matrix of cell-type proportions.
 #'
 #' @param B matrix of beta values (n_probes * n_samples) rownames must
 #'        be the illumina cg id or the chrom:position
@@ -78,14 +76,10 @@ penFitAll = function(Ymat, Zmat){
 #' @param cell.coefs path to tab-delimited file containind DMR-probes for the
 #'        cell types of interest. system.file("extdata", "houseman-dmrs.txt",
 #'        package="celltypes450")
-#' @param est.only if TRUE, only estimate the coefficients for the cell-types
-#'        without actually adjusting.
-#' @return matrix of adjusted beta values (or data.frame of cell coefs if)
-#'         \code{est.only} is FALSE
+#' @return matrix of estimated cell-type proportions
 #' @export
-adjust.beta = function(B, top_n=500, mc.cores=2, 
-                       cell.coefs=NULL,
-                       est.only=FALSE){
+estimate.cell.proportions = function(B, top_n=500, mc.cores=2,
+                              cell.coefs=NULL) {
     stopifnot(all((B > 0) & (B < 1), na.rm=TRUE))
 
     if(is.null(cell.coefs)){
@@ -105,10 +99,7 @@ adjust.beta = function(B, top_n=500, mc.cores=2,
             cell.coefs = system.file("extdata", "houseman-dmrs-locs.txt", package="celltypes450")
         }
     }
-    # after adjusting, set values < 0 or > 1 to the smallest observed value
-    epsilon.min = min(B, 1 - B)
-    epsilon.max = 1 - epsilon.min
-    
+
     dmr.coefs = read.delim(cell.coefs, row.names=1)
     # take shared probes. may be differences if beta is from 450k
     dmr.coefs = dmr.coefs[rownames(dmr.coefs) %in% rownames(B),]
@@ -131,7 +122,32 @@ adjust.beta = function(B, top_n=500, mc.cores=2,
         lessThanOne=FALSE)
 
     omega.mix = (1 / apply(omega.mix, 1, sum)) * omega.mix
-    if(est.only){ return(omega.mix) }
+    return(omega.mix)
+}
+
+#' Adjust Beta for cell mixture. Returns beta of the average cell-type.
+#'
+#' For simply estimating the cell-type proportions, see
+#' estimate.cell.proportions.
+#'
+#' @param B matrix of beta values (n_probes * n_samples) rownames must
+#'        be the illumina cg id or the chrom:position
+#' @param top_n number of probes from cell.coefs to use
+#' @param mc.cores number of cores to use for parallelization
+#' @param cell.coefs path to tab-delimited file containind DMR-probes for the
+#'        cell types of interest. Ignored if omega.mix is provided.
+#'        system.file("extdata", "houseman-dmrs.txt", package="celltypes450")
+#' @param omega.mix pre-specified matrix of cell-type coefficients. If
+#'        not specified, this will be estimated from the data.
+#' @return matrix of adjusted beta values
+#' @export
+adjust.beta = function(B, top_n=500, mc.cores=2,
+                       cell.coefs=NULL,
+                       omega.mix=NULL){
+    if (is.null(omega.mix)) {
+        omega.mix <- estimate.cell.proportions(B=B, top_n=top_n, mc.cores=mc.cores, cell.coefs=cell.coefs)
+    }
+    stopifnot(ncol(B) == nrow(omega.mix))
 
     message("adjusting beta (this will take a while)...")
     tmpList = lapply(1:mc.cores, function(i){ seq(from=i, to=nrow(B), by=mc.cores) })
@@ -142,12 +158,17 @@ adjust.beta = function(B, top_n=500, mc.cores=2,
         adjBeta[tmpList[[i]],] = tmpAdj[[i]]$adjusted
     }
     nCpGs = nrow(B) * ncol(B)
-    message(paste("% values <= 0:", sum(adjBeta <= 0, na.rm=TRUE) / nCpGs * 100))
-    message(paste("% values >= 1:", sum(adjBeta >= 1, na.rm=TRUE) / nCpGs * 100))
-    message("these will be changed to 0+epsilon, 1-epsilon respectively")
 
-    adjBeta[(adjBeta <= 0)] = epsilon.min
-    adjBeta[(adjBeta >= 1)] = epsilon.max
+    # after adjusting, set values < 0 or > 1 to the smallest observed value
+    epsilon.min = min(B, 1 - B)
+    epsilon.max = 1 - epsilon.min
+
+    message(sprintf("%0.3g%% of values < epsilon:", sum(adjBeta < epsilon.min, na.rm=TRUE) / nCpGs * 100))
+    message(sprintf("%0.3g%% of values > 1-epsilon:", sum(adjBeta > epsilon.max, na.rm=TRUE) / nCpGs * 100))
+    message("these will be changed to epsilon, 1-epsilon respectively")
+
+    adjBeta = pmax(adjBeta, epsilon.min)
+    adjBeta = pmin(adjBeta, epsilon.max)
     rownames(adjBeta) = rownames(B)
     colnames(adjBeta) = colnames(B)
 
